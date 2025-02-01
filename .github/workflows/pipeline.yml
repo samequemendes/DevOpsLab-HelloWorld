@@ -1,32 +1,35 @@
-name: CI - Lint / Tests / Deploy
+name: CI/CD - Lint, Tests, Deploy Infra e Deploy App
 
-on: [push]
+on:
+  push:
+    branches:
+      - main  # Ajuste para a branch desejada
 
 jobs:
 
+  # 🛠️ Etapa 1: Lint no código Python
   lint:
     runs-on: ubuntu-20.04
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout do código
+        uses: actions/checkout@v3
 
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install flake8
 
-      - name: Lint with flake8
+      - name: Rodar Flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+  # 🧪 Etapa 2: Rodar testes automatizados
   tests:
     needs: lint
     runs-on: ubuntu-20.04
@@ -35,39 +38,92 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout do código
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Integrations Test
-        run: | 
+      - name: Rodar testes
+        run: |
           python test.py
 
-
-  deploy:
+  # 🚀 Etapa 3: Provisionar Infra AWS com Terraform
+  deploy_infra:
     needs: tests
     runs-on: ubuntu-20.04
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout do código
+        uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - name: Configurar credenciais da AWS
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          python-version: 3.9
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      - name: deploy into heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Inicializar Terraform
+        run: |
+          cd infra
+          terraform init
+
+      - name: Validar Terraform
+        run: |
+          cd infra
+          terraform validate
+
+      - name: Aplicar Terraform
+        run: |
+          cd infra
+          terraform apply -auto-approve
+
+  # 🎯 Etapa 4: Build, Upload para S3 e Deploy no Beanstalk
+  deploy_app:
+    needs: deploy_infra
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar credenciais da AWS
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
-          heroku_email: ${{secrets.HEROKU_USER_EMAIL}}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Criar pacote ZIP da aplicação
+        run: |
+          zip -r app.zip src/ -x "*.git*"
+
+      - name: Fazer upload para o S3
+        run: |
+          FILE_NAME=app-$(date +%Y%m%d%H%M%S).zip
+          aws s3 cp app.zip s3://meu-app-bucket-deploy/$FILE_NAME
+
+      - name: Criar nova versão da aplicação no Elastic Beanstalk
+        run: |
+          FILE_NAME=app-$(date +%Y%m%d%H%M%S).zip
+          aws elasticbeanstalk create-application-version \
+            --application-name meu-app \
+            --version-label $FILE_NAME \
+            --source-bundle S3Bucket=meu-app-bucket-deploy,S3Key=$FILE_NAME
+
+      - name: Atualizar ambiente do Elastic Beanstalk
+        run: |
+          FILE_NAME=app-$(date +%Y%m%d%H%M%S).zip
+          aws elasticbeanstalk update-environment \
+            --environment-name meu-app-env \
+            --version-label $FILE_NAME
