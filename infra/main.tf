@@ -11,9 +11,9 @@ resource "aws_elastic_beanstalk_application" "app" {
 
 # Criando o ambiente do Elastic Beanstalk
 resource "aws_elastic_beanstalk_environment" "env" {
-  name                = "${var.app_name}-env"
+  name                = "${var.app_name}-${var.env}"
   application         = aws_elastic_beanstalk_application.app.name
-  solution_stack_name = "64bit Amazon Linux 2023 v4.0.3 running Python 3.8"
+  solution_stack_name = "Python 3.8 running on 64bit Amazon Linux 2"  # Plataforma exata conforme imagem
 
   setting {
     namespace = "aws:elasticbeanstalk:environment"
@@ -25,5 +25,23 @@ resource "aws_elastic_beanstalk_environment" "env" {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "InstanceType"
     value     = "t3.micro"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:container:python"
+    name      = "NumProcesses"
+    value     = "3"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:container:python"
+    name      = "NumThreads"
+    value     = "20"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application"
+    name      = "Application Healthcheck URL"
+    value     = "/"
   }
 }

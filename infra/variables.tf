@@ -19,3 +19,8 @@ variable "aws_region" {
   description = "Região AWS onde o ambiente será criado"
   type        = string
 }
+
+variable "env" {
+  description = "ambiente"
+  type = string
+}
