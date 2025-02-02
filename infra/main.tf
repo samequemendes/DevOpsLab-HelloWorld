@@ -44,4 +44,10 @@ resource "aws_elastic_beanstalk_environment" "env" {
     name      = "Application Healthcheck URL"
     value     = "/"
   }
+
+  setting {
+    namespace = "aws:autoscaling:launchconfiguration"
+    name      = "IamInstanceProfile"
+    value     = aws_iam_instance_profile.instance_profile.name
+  }
 }
