@@ -1,14 +1,15 @@
-provider "aws" {
-  region = var.aws_region
+# Criando um Bucket S3 para armazenar os pacotes da aplicação
+resource "aws_s3_bucket" "beanstalk_bucket" {
+  bucket = "${var.app_name}-bucket-deploy"
 }
 
-# Aplicação Elastic Beanstalk
+# Criando a aplicação no Elastic Beanstalk
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
   description = "Aplicação ${var.app_name} no Elastic Beanstalk"
 }
 
-# Ambiente Elastic Beanstalk
+# Criando o ambiente do Elastic Beanstalk
 resource "aws_elastic_beanstalk_environment" "env" {
   name                = "${var.app_name}-env"
   application         = aws_elastic_beanstalk_application.app.name

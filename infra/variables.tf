@@ -1,5 +1,5 @@
 variable "app_name" {
-  description = "Nome do aplicativo"
+  description = "Nome da aplicação"
   type        = string
 }
 
@@ -10,7 +10,7 @@ variable "app_language" {
 }
 
 variable "app_language_version" {
-  description = "Versão da linguagem"
+  description = "Versão da linguagem da aplicação"
   type        = string
   default     = "3.8"
 }
