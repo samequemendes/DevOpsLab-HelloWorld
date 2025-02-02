@@ -59,18 +59,17 @@ jobs:
 
   # 🚀 Etapa 3: Provisionar Infra AWS com Terraform
   deploy_infra:
-    needs: tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Configurar credenciais da AWS
+      - name: Configurar AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1  # Região padrão, mas será alterada dinamicamente
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
@@ -80,15 +79,14 @@ jobs:
           cd infra
           terraform init
 
-      - name: Validar Terraform
+      - name: Aplicar Terraform (Ambiente correto)
         run: |
           cd infra
-          terraform validate
-
-      - name: Aplicar Terraform
-        run: |
-          cd infra
-          terraform apply -auto-approve
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            terraform apply -var-file=environments/prd.tfvars -auto-approve
+          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+            terraform apply -var-file=environments/hml.tfvars -auto-approve
+          fi
 
   # 🎯 Etapa 4: Build, Upload para S3 e Deploy no Beanstalk
   deploy_app:
