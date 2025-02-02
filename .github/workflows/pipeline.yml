@@ -5,6 +5,7 @@ on:
     branches:
       - main  # Ajuste para a branch desejada
       - staging
+  workflow_dispatch:
 
 jobs:
 
@@ -128,3 +129,35 @@ jobs:
           aws elasticbeanstalk update-environment \
             --environment-name meu-app-env \
             --version-label $FILE_NAME
+
+
+  destroy_infra:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  # Região padrão, mas será alterada dinamicamente
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Inicializar Terraform
+        run: |
+          cd infra
+          terraform init
+
+      - name: Aplicar Terraform (Ambiente correto)
+        run: |
+          cd infra
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            terraform destroy -var-file=environments/prd.tfvars -auto-approve
+          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+            terraform destroy -var-file=environments/hml.tfvars -auto-approve
+          fi
