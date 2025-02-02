@@ -131,7 +131,20 @@ jobs:
             --version-label $FILE_NAME
 
 
+  approve_destroy:
+    needs: [deploy_infra, deploy_app] # Só roda após deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Esperando Aprovação Manual
+        run: echo "Aguardando aprovação para destruir o ambiente..."
+    
+    # A etapa precisa ser aprovada manualmente no GitHub antes de continuar
+    environment:
+      name: approval-needed
+      url: https://github.com/${{ github.repository }}/actions
+
   destroy_infra:
+    needs: approve_destroy
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
     steps:
