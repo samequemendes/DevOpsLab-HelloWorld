@@ -13,7 +13,7 @@ resource "aws_elastic_beanstalk_application" "app" {
 resource "aws_elastic_beanstalk_environment" "env" {
   name                = "${var.app_name}-${var.env}"
   application         = aws_elastic_beanstalk_application.app.name
-  solution_stack_name = "Python 3.8 running on 64bit Amazon Linux 2"  # Plataforma exata conforme imagem
+  solution_stack_name = "64bit Amazon Linux 2 v3.7.8 running Python 3.8"  # Plataforma exata conforme imagem
 
   setting {
     namespace = "aws:elasticbeanstalk:environment"
