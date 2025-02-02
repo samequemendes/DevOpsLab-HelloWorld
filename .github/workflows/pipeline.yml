@@ -60,6 +60,7 @@ jobs:
   # 🚀 Etapa 3: Provisionar Infra AWS com Terraform
   
   deploy_infra:
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
