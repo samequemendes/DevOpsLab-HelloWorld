@@ -140,7 +140,7 @@ jobs:
     
     # A etapa precisa ser aprovada manualmente no GitHub antes de continuar
     environment:
-      name: approval-needed
+      name: staging-approval
       url: https://github.com/${{ github.repository }}/actions
 
   destroy_infra:
