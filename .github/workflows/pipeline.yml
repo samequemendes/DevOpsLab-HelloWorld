@@ -122,7 +122,7 @@ jobs:
       - name: Criar nova versão da aplicação no Elastic Beanstalk
         run: |
           aws elasticbeanstalk create-application-version \
-            --application-name meu-app \
+            --application-name 4linux-devops-samequemendes \
             --version-label ${{ env.ZIP_FILE }} \
             --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=${{ env.ZIP_FILE }}
 
