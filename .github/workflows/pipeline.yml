@@ -111,26 +111,26 @@ jobs:
       - name: Criar pacote ZIP da aplicação
         run: |
           cd src
-          zip -r ../app.zip . -x ".git/*" "__pycache__/*" "venv/*" "*.DS_Store"
+          ZIP_FILE="app-$(date +%Y%m%d%H%M%S).zip"
+          zip -r "../$ZIP_FILE" . -x ".git/*" "__pycache__/*" "venv/*" "*.DS_Store"
+          echo "ZIP_FILE=$ZIP_FILE" >> $GITHUB_ENV
 
       - name: Upload para S3
         run: |
-          aws s3 cp app.zip s3://${{ secrets.S3_BUCKET }}/app.zip
+          aws s3 cp ${{ env.ZIP_FILE }} s3://${{ secrets.S3_BUCKET }}/${{ env.ZIP_FILE }}
 
       - name: Criar nova versão da aplicação no Elastic Beanstalk
         run: |
-          FILE_NAME=app-$(date +%Y%m%d%H%M%S).zip
           aws elasticbeanstalk create-application-version \
             --application-name meu-app \
-            --version-label $FILE_NAME \
-            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=$FILE_NAME
+            --version-label ${{ env.ZIP_FILE }} \
+            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=${{ env.ZIP_FILE }}
 
       - name: Atualizar ambiente do Elastic Beanstalk
         run: |
-          FILE_NAME=app-$(date +%Y%m%d%H%M%S).zip
           aws elasticbeanstalk update-environment \
             --environment-name meu-app-env \
-            --version-label $FILE_NAME
+            --version-label ${{ env.ZIP_FILE }}
 
   approve_destroy:
     runs-on: ubuntu-latest
