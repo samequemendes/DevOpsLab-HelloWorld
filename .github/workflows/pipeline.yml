@@ -155,7 +155,6 @@ jobs:
   destroy_infra:
     needs: approve_destroy
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.destroy_environment == 'true'
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
