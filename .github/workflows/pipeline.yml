@@ -142,12 +142,12 @@ jobs:
             --version-label ${{ env.ZIP_FILE }}
 
   approve_destroy:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.destroy_environment == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Esperando Aprovação Manual
         run: echo "Aguardando aprovação para destruir o ambiente..."
-
+    
+    # A etapa precisa ser aprovada manualmente no GitHub antes de continuar
     environment:
       name: staging-approval
       url: https://github.com/${{ github.repository }}/actions
