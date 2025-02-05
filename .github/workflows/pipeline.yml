@@ -134,6 +134,7 @@ jobs:
 
   approve_destroy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
     steps:
       - name: Esperando Aprovação Manual
         run: echo "Aguardando aprovação para destruir o ambiente..."
@@ -145,7 +146,6 @@ jobs:
   destroy_infra:
     needs: approve_destroy
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
