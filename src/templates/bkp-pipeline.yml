@@ -3,7 +3,7 @@ name: CI/CD - Lint, Tests, Deploy Infra e Deploy App
 on:
   push:
     branches:
-      - main
+      - main  # Ajuste para a branch desejada
       - staging
   workflow_dispatch:
 
@@ -23,13 +23,11 @@ jobs:
 
       - name: Instalar dependências
         run: |
-          cd src
           python -m pip install --upgrade pip
           pip install flake8
 
       - name: Rodar Flake8
         run: |
-          cd src
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
@@ -52,16 +50,16 @@ jobs:
 
       - name: Instalar dependências
         run: |
-          cd src
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Rodar testes
         run: |
-          cd src
           python test.py
 
   # 🚀 Etapa 3: Provisionar Infra AWS com Terraform
+  
   deploy_infra:
     needs: tests
     runs-on: ubuntu-latest
@@ -74,7 +72,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1  # Região padrão, mas será alterada dinamicamente
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
@@ -93,6 +91,7 @@ jobs:
             terraform apply -var-file=environments/hml.tfvars -auto-approve
           fi
 
+
   # 🎯 Etapa 4: Build, Upload para S3 e Deploy no Beanstalk
   deploy_app:
     needs: deploy_infra
@@ -110,8 +109,7 @@ jobs:
 
       - name: Criar pacote ZIP da aplicação
         run: |
-          cd src
-          zip -r ../app.zip . -x ".git/*" "__pycache__/*" "venv/*" "*.DS_Store"
+          zip -r app.zip
 
       - name: Upload para S3
         run: |
@@ -132,13 +130,15 @@ jobs:
             --environment-name meu-app-env \
             --version-label $FILE_NAME
 
+
   approve_destroy:
-    needs: [deploy_infra, deploy_app]
+    needs: [deploy_infra, deploy_app] # Só roda após deploy
     runs-on: ubuntu-latest
     steps:
       - name: Esperando Aprovação Manual
         run: echo "Aguardando aprovação para destruir o ambiente..."
     
+    # A etapa precisa ser aprovada manualmente no GitHub antes de continuar
     environment:
       name: staging-approval
       url: https://github.com/${{ github.repository }}/actions
@@ -156,7 +156,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1  # Região padrão, mas será alterada dinamicamente
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
