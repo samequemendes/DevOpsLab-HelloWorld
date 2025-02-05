@@ -133,6 +133,7 @@ jobs:
             --version-label ${{ env.ZIP_FILE }}
 
   approve_destroy:
+    needs: deploy_app
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
     steps:
