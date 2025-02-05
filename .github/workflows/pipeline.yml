@@ -133,7 +133,6 @@ jobs:
             --version-label $FILE_NAME
 
   approve_destroy:
-    needs: [deploy_infra, deploy_app]
     runs-on: ubuntu-latest
     steps:
       - name: Esperando Aprovação Manual
