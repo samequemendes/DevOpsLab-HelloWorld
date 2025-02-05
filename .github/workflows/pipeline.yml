@@ -6,6 +6,15 @@ on:
       - main
       - staging
   workflow_dispatch:
+    inputs:
+      destroy_environment:
+        description: "Destruir infraestrutura?"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
 
@@ -133,13 +142,12 @@ jobs:
             --version-label ${{ env.ZIP_FILE }}
 
   approve_destroy:
-    needs: deploy_app
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.destroy_environment == 'true'
     runs-on: ubuntu-latest
-    # if: github.event_name == 'workflow_dispatch'  # Apenas quando acionado manualmente
     steps:
       - name: Esperando Aprovação Manual
         run: echo "Aguardando aprovação para destruir o ambiente..."
-    
+
     environment:
       name: staging-approval
       url: https://github.com/${{ github.repository }}/actions
@@ -147,6 +155,7 @@ jobs:
   destroy_infra:
     needs: approve_destroy
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.destroy_environment == 'true'
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
