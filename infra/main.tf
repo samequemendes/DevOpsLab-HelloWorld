@@ -1,8 +1,3 @@
-# Criando um Bucket S3 para armazenar os pacotes da aplicação
-resource "aws_s3_bucket" "beanstalk_bucket" {
-  bucket = "${var.app_name}-bucket-deploy"
-}
-
 # Criando a aplicação no Elastic Beanstalk
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
